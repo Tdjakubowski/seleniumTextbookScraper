@@ -41,7 +41,7 @@ def main():
 
 def seleniumStartup(webBrowserChoice):
     
-    #Ensures the webdriver will load w/o GUI
+    #Allows us to edit the options for the webdriver
     options = Options()
     
     
@@ -51,19 +51,28 @@ def seleniumStartup(webBrowserChoice):
         try:
             #Start a firefox webdriver
             if int(webBrowserChoice) == 1:
+                
+                #Webdriver will load without GUI
                 options.headless = True
+                
                 driver= webdriver.Firefox(options=options)
+                
                 print("Driver loaded.")
                 return driver
+            
             #Start a chrome webdriver
             else:
-                #some command goes here to make it headless
+                #some command goes here to make the webdriver headless on chrome
+                
+                
+                
                 driver = webdriver.Chrome(options=options)
                 print("Driver loaded.")
                 return driver
-
+        #Prevents the program from crashing, and tries again
         except WebDriverException:
             print("Driver Failed. Attempt #"+str(i+1)+"/3")
+    #exits program after 3rd failed load        
     if i == 2:
         print("Webdriver Load Failed. Shutting Down.")
         exit()
