@@ -39,8 +39,10 @@ def main():
     
     #googleScraping(driver,ISBN)
     #alamoScraping(driver,ISBN)
-    barnesAndNobleScraping(driver,ISBN)
-    driver
+    
+    barnesAndNobleResults=[]
+    barnesAndNobleResults = barnesAndNobleScraping(driver,ISBN)
+    driver.quit()
 
 #Attempts to start a Firefox webdriver using Selenium, I did firefox because I don't want to redownload chrome, even though chrome is probably better for this process
 
@@ -167,6 +169,6 @@ def barnesAndNobleScraping(driver,ISBN):
     print(rentNew.get_attribute("innerHTML"))
     print(rentUsed.get_attribute("innerHTML"))
     print(rentReturn.get_attribute("innerHTML"))
-    
+    return [buyNew.get_attribute("innerHTML"),buyUsed.get_attribute("innerHTML"),rentNew.get_attribute("innerHTML"),rentUsed.get_attribute("innerHTML"),rentReturn.get_attribute("innerHTML")]
     
 main()
