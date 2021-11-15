@@ -37,11 +37,13 @@ def main():
     driver = seleniumStartup(webBrowserChoice)
     ISBN = '9781442222502'
     
-    #googleScraping(driver,ISBN)
-    #alamoScraping(driver,ISBN)
+    barnesAndNobleResults = [] #[buyNew,buyUsed,rentNew,rentUsed,rentReturn] If one of the items is unavailable, it will return None
+    barnesAndNobleResults= barnesAndNobleScraping(driver,ISBN)
+
+    googleResults = [[],[]]
+    googleResults = googleScraping(driver,ISBN)
+
     
-    barnesAndNobleResults=[]
-    barnesAndNobleResults = barnesAndNobleScraping(driver,ISBN)
     driver.quit()
 
 #Attempts to start a Firefox webdriver using Selenium, I did firefox because I don't want to redownload chrome, even though chrome is probably better for this process
@@ -58,7 +60,7 @@ def seleniumStartup(webBrowserChoice):
         try:
             #Start a firefox webdriver
             if int(webBrowserChoice) == 1:
-                #options.headless = True
+                options.headless = True
                 driver= webdriver.Firefox(options=options)
                 print("Driver loaded.")
                 return driver
@@ -75,88 +77,44 @@ def seleniumStartup(webBrowserChoice):
         print("Error: ",err)
         print("Webdriver Load Failed. Shutting Down.")
         exit()
-        
-
-#this code is ridiculously scuffed, if we have enough time at the end I'll try to go back and fix it, but idk man I gotta rewrite this entire class    
+#Not perfect yet, google tends to give one of 3 instances when pulling up the shopping page, so need to add more exception catchers to filter through all possible pages.
 def googleScraping(driver,ISBN):
-    #Grabbing the entire webpage
-    #I broke it up because my IDE cant scroll horizontally, and trying to transport imports to a different IDE is irritating :/
-    driver.get("https://www.google.com/search?q=Information+Technology+Project+Management:+Providing+Measurable+"+
-               "Organizational+Value,+5th+Edition++Jack+T.+Marchewka&source=lmns&tbm=shop&bih=750&biw=1536&client=firefox-b-1-d&hl=en&sa=X&ved="+
-               "2ahUKEwjCgqf8gMvzAhUYU80KHQcFCe0Q_AUoAnoECAEQAg")
-    
-    #Searches the html for elements named GhTN2e
+    driver.get('https://www.google.com/')
 
-    #Looking closer at the html pulled, it has all 4, but they're grouped in 2. Soooooooo it technically works :)
-    closerClass = driver.find_elements_by_xpath("//div[@class='GhTN2e']")
-
-    #Prints out each element in closerClass
-    for element in closerClass:
-        print(element.get_attribute("innerHTML")+'\n')
-        
-    #Self explanitory
+    searchBar = driver.find_element_by_xpath('/html/body/div[1]/div[3]/form/div[1]/div[1]/div[1]/div/div[2]/input')
+    searchBar.click()
+    searchBar.send_keys(ISBN)
+    searchBar.submit()
     
 
-def alamoScraping(driver,ISBN):
-    #Grabs the html, then inputs the ISBN into the search to pull the textbook
-    #Notes: This should work, but there's anti-scraping software on the website that prevents progression, so I have to change the app data being sent(hopefully that'll work)
-    driver.get("https://www.bkstr.com/illinoisstatestore/home")
-    success1=False
-    success2=False
-    success3=False
-    i=0
-    while not success3:
-        i+=1    
-        
-        if not success1:
-            try:
-                searchBar = driver.find_element_by_xpath("//*[@id='searchKeyword']")
-                searchBar.click()
-                searchBar.send_keys(ISBN)
-                success1 = True
-                
-            except exceptions.ElementClickInterceptedException or exceptions.ElementNotInteractableException:
-                
-                clickAndHold(driver)
-                
-        if not success2:
-            try: 
-                searchButton = driver.find_element_by_xpath('//*[@id="1000180941"]')
-                searchButton.click()
-                success2 = True
-                
-            except exceptions.ElementClickInterceptedException or exceptions.ElementNotInteractableException:
-                
-                clickAndHold(driver)
-                
-        if not success3:
-            try:
-                usedRentalPrice = driver.find_element_by_xpath("/html/body/ef-root/ef-store/ef-product-details/ef-adopted-text/main/div/div[3]/ef-course-material-price/div[1]/div/div[1]/div/label/div[3]/span[1]")
-                newRentalPrice = driver.find_element_by_xpath("/html/body/ef-root/ef-store/ef-product-details/ef-adopted-text/main/div/div[3]/ef-course-material-price/div[1]/div/div[2]/div/label/div[3]/span[1]")
-                rentalReturnDate = driver.find_element_by_xpath("/html/body/ef-root/ef-store/ef-product-details/ef-adopted-text/main/div/div[3]/ef-course-material-price/div[1]/div/div[1]/div/label/div[3]/span[2]")
-                buyUsed = driver.find_element_by_xpath("/html/body/ef-root/ef-store/ef-product-details/ef-adopted-text/main/div/div[3]/ef-course-material-price/div[2]/div/div[1]/div/label/div[3]/span")
-                buyNew = driver.find_element_by_xpath("/html/body/ef-root/ef-store/ef-product-details/ef-adopted-text/main/div/div[3]/ef-course-material-price/div[2]/div/div[2]/div/label/div[3]/span")
-                print(usedRentalPrice,newRentalPrice,rentalReturnDate,buyUsed,buyNew)
-                success3=True
-            except exceptions.ElementClickInterceptedException or exceptions.ElementNotInteractableException:
-                discountCaptcha = driver.find_elements_by_xpath('//*[@id="modalForAPIChallenge"]')
-                clickAndHold(driver)
-        if i>=7:
-            break
+    shoppingButton = WebDriverWait(driver, 10).until(expected_conditions.visibility_of_element_located((By.XPATH,'/html/body/div[7]/div/div[3]/div/div[1]/div/div[1]/div/div[5]/a')))
+    shoppingButton.click()
+    results = []
+    for i in range(3):
+        try:
+            cost = WebDriverWait(driver, 5).until(expected_conditions.visibility_of_element_located((By.XPATH,'/html/body/div[7]/div/div[9]/div[4]/div/div[2]/div[2]/div/div/div[1]/g-scrolling-carousel/div[1]/div/div/div['+str(i+1)+']/a/div[3]/div/div[2]/span/b')))
+            website = WebDriverWait(driver, 5).until(expected_conditions.visibility_of_element_located((By.XPATH,'/html/body/div[7]/div/div[9]/div[4]/div/div[2]/div[2]/div/div/div[1]/g-scrolling-carousel/div[1]/div/div/div['+str(i+1)+']/a/div[3]/div/div[3]/span')))
+        except exceptions.TimeoutException:
+            cost = WebDriverWait(driver, 5).until(expected_conditions.visibility_of_element_located((By.XPATH,'/html/body/div[7]/div/div[9]/div[4]/div/div[2]/div[2]/div/div/div[1]/g-scrolling-carousel/div[1]/div/div/div['+str(i+1)+']/a/div[2]/div/div[2]/span/b')))
+            website = WebDriverWait(driver, 5).until(expected_conditions.visibility_of_element_located((By.XPATH,'/html/body/div[7]/div/div[9]/div[4]/div/div[2]/div[2]/div/div/div[1]/g-scrolling-carousel/div[1]/div/div/div['+str(i+1)+']/a/div[3]/div/div[3]/span')))
 
-def clickAndHold(driver):
-    discountCaptcha = driver.find_element_by_xpath('/html/body/ef-root/ef-store/ef-api-challenge/div/div/div/div[2]/div/iframe[7]')
-    ActionChains(driver).move_to_element(discountCaptcha).click_and_hold(discountCaptcha).perform()
-        
+        URL = 'https://www.google.com/' + (WebDriverWait(driver, 5).until(expected_conditions.visibility_of_element_located((By.XPATH,'/html/body/div[7]/div/div[9]/div[4]/div/div[2]/div[2]/div/div/div[1]/g-scrolling-carousel/div[1]/div/div/div['+str(i+1)+']/a'))).get_attribute('href'))
+        print(URL)
+        results.append([cost,website,URL])
+
+    print(results)
 def barnesAndNobleScraping(driver,ISBN):
     
     driver.get('https://ilstu.bncollege.com/')
 
-    #Input the ISBN into the search and press enter
+    #Input the ISBN into the search
     searchBar = driver.find_element_by_xpath("//*[@id='bned_site_search']")
     searchBar.click()
     searchBar.send_keys(ISBN)
-    searchBar.submit()
+
+    #Find the search button and click it
+    searchButton = driver.find_element_by_xpath('/html/body/div[1]/div/div[1]/div[2]/div/form/div/div/div[1]/button[2]')
+    searchButton.click()
 
     #Grabs the price to buy new/used, rent new/used, and return date
     buyNew = WebDriverWait(driver, 10).until(expected_conditions.visibility_of_element_located((By.XPATH,"/html/body/main/div[3]/div[5]/div/div/div/div[2]/div[2]/div/div[3]/div/div[1]/div[2]/div[1]/div/label/span[1]")))
@@ -164,11 +122,7 @@ def barnesAndNobleScraping(driver,ISBN):
     rentNew = driver.find_element_by_xpath("/html/body/main/div[3]/div[5]/div/div/div/div[2]/div[2]/div/div[3]/div/div[2]/div[2]/div[1]/div/label/span[1]")
     rentUsed = driver.find_element_by_xpath("/html/body/main/div[3]/div[5]/div/div/div/div[2]/div[2]/div/div[3]/div/div[2]/div[2]/div[2]/div/label/span[1]")
     rentReturn = driver.find_element_by_xpath("/html/body/main/div[3]/div[5]/div/div/div/div[2]/div[2]/div/div[3]/div/div[2]/div[2]/div[2]/div/span")
-    print(buyNew.get_attribute("innerHTML"))
-    print(buyUsed.get_attribute("innerHTML"))
-    print(rentNew.get_attribute("innerHTML"))
-    print(rentUsed.get_attribute("innerHTML"))
-    print(rentReturn.get_attribute("innerHTML"))
     return [buyNew.get_attribute("innerHTML"),buyUsed.get_attribute("innerHTML"),rentNew.get_attribute("innerHTML"),rentUsed.get_attribute("innerHTML"),rentReturn.get_attribute("innerHTML")]
+    
     
 main()
