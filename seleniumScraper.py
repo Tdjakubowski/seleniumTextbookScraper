@@ -1,7 +1,11 @@
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
-from selenium.common.exceptions import WebDriverException
-from selenium.webdriver.firefox.options import Options 
+from selenium.common import exceptions
+from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions
+from selenium.webdriver.common.by import By
 import time
 
 
@@ -31,17 +35,22 @@ def main():
     webBrowserChoice = input('Choose a browser:\n1.Firefox\n2.Chrome (Recommended)')
     
     driver = seleniumStartup(webBrowserChoice)
+    ISBN = '9781442222502'
     
-    actuallyScraping(driver)
+    barnesAndNobleResults = [] #[buyNew,buyUsed,rentNew,rentUsed,rentReturn] If one of the items is unavailable, it will return None
+    barnesAndNobleResults= barnesAndNobleScraping(driver,ISBN)
 
+    googleResults = [[],[]]
+    googleResults = googleScraping(driver,ISBN)
 
-
+    
+    driver.quit()
 
 #Attempts to start a Firefox webdriver using Selenium, I did firefox because I don't want to redownload chrome, even though chrome is probably better for this process
 
 def seleniumStartup(webBrowserChoice):
     
-    #Allows us to edit the options for the webdriver
+    #Ensures the webdriver will load w/o GUI
     options = Options()
     
     
@@ -51,61 +60,69 @@ def seleniumStartup(webBrowserChoice):
         try:
             #Start a firefox webdriver
             if int(webBrowserChoice) == 1:
-                
-                #Webdriver will load without GUI
                 options.headless = True
-                
                 driver= webdriver.Firefox(options=options)
-                
                 print("Driver loaded.")
                 return driver
-            
             #Start a chrome webdriver
             else:
-                #some command goes here to make the webdriver headless on chrome
-                
-                
-                
-                driver = webdriver.Chrome(options=options)
+                #some command goes here to make it headless
+                driver = webdriver.Chrome()
                 print("Driver loaded.")
                 return driver
-        #Prevents the program from crashing, and tries again
-        except WebDriverException:
+
+        except exceptions.WebDriverException as err:
             print("Driver Failed. Attempt #"+str(i+1)+"/3")
-    #exits program after 3rd failed load        
     if i == 2:
+        print("Error: ",err)
         print("Webdriver Load Failed. Shutting Down.")
         exit()
-        
+#Not perfect yet, google tends to give one of 3 instances when pulling up the shopping page, so need to add more exception catchers to filter through all possible pages.
+def googleScraping(driver,ISBN):
+    driver.get('https://www.google.com/')
+
+    searchBar = driver.find_element_by_xpath('/html/body/div[1]/div[3]/form/div[1]/div[1]/div[1]/div/div[2]/input')
+    searchBar.click()
+    searchBar.send_keys(ISBN)
+    searchBar.submit()
     
 
-def actuallyScraping(driver):
-    #Grabbing the entire webpage
-    #I broke it up because my IDE cant scroll horizontally, and trying to transport imports to a different IDE is irritating :/
-    driver.get("https://www.google.com/search?q=Information+Technology+Project+Management:+Providing+Measurable+"+
-               "Organizational+Value,+5th+Edition++Jack+T.+Marchewka&source=lmns&tbm=shop&bih=750&biw=1536&client=firefox-b-1-d&hl=en&sa=X&ved="+
-               "2ahUKEwjCgqf8gMvzAhUYU80KHQcFCe0Q_AUoAnoECAEQAg")
-    
-    #Searching the html for elements named mR2gOd, which contains all of the books in the ad section, but also has a lot of other stuff we dont need
-    largerClass = driver.find_elements_by_class_name("mR2gOd")
-    
-    #Prints out each element in largerClass
-    for element in largerClass:
-        print(element.get_attribute("innerHTML")+'\n')
-        
-    #wait 3 seconds, allows everything else to load
-    #time.sleep(3)
-    
-    #Searches the html for elements named GhTN2e, which is more specific, but for some unknown reason only pulls 2 books. Why? IDK
+    shoppingButton = WebDriverWait(driver, 10).until(expected_conditions.visibility_of_element_located((By.XPATH,'/html/body/div[7]/div/div[3]/div/div[1]/div/div[1]/div/div[5]/a')))
+    shoppingButton.click()
+    results = []
+    for i in range(3):
+        try:
+            cost = WebDriverWait(driver, 5).until(expected_conditions.visibility_of_element_located((By.XPATH,'/html/body/div[7]/div/div[9]/div[4]/div/div[2]/div[2]/div/div/div[1]/g-scrolling-carousel/div[1]/div/div/div['+str(i+1)+']/a/div[3]/div/div[2]/span/b')))
+            website = WebDriverWait(driver, 5).until(expected_conditions.visibility_of_element_located((By.XPATH,'/html/body/div[7]/div/div[9]/div[4]/div/div[2]/div[2]/div/div/div[1]/g-scrolling-carousel/div[1]/div/div/div['+str(i+1)+']/a/div[3]/div/div[3]/span')))
+        except exceptions.TimeoutException:
+            cost = WebDriverWait(driver, 5).until(expected_conditions.visibility_of_element_located((By.XPATH,'/html/body/div[7]/div/div[9]/div[4]/div/div[2]/div[2]/div/div/div[1]/g-scrolling-carousel/div[1]/div/div/div['+str(i+1)+']/a/div[2]/div/div[2]/span/b')))
+            website = WebDriverWait(driver, 5).until(expected_conditions.visibility_of_element_located((By.XPATH,'/html/body/div[7]/div/div[9]/div[4]/div/div[2]/div[2]/div/div/div[1]/g-scrolling-carousel/div[1]/div/div/div['+str(i+1)+']/a/div[3]/div/div[3]/span')))
 
-    #Looking closer at the html pulled, it has all 4, but they're grouped in 2. Soooooooo it technically works :)
-    closerClass = driver.find_elements_by_xpath("//div[@class='GhTN2e']")
-    print(len(closerClass))
+        URL = 'https://www.google.com/' + (WebDriverWait(driver, 5).until(expected_conditions.visibility_of_element_located((By.XPATH,'/html/body/div[7]/div/div[9]/div[4]/div/div[2]/div[2]/div/div/div[1]/g-scrolling-carousel/div[1]/div/div/div['+str(i+1)+']/a'))).get_attribute('href'))
+        print(URL)
+        results.append([cost,website,URL])
 
-    #Prints out each element in closerClass
-    for element in closerClass:
-        print(element.get_attribute("innerHTML")+'\n')
-        
-    #Self explanitory
-    driver.quit()
+    print(results)
+def barnesAndNobleScraping(driver,ISBN):
+    
+    driver.get('https://ilstu.bncollege.com/')
+
+    #Input the ISBN into the search
+    searchBar = driver.find_element_by_xpath("//*[@id='bned_site_search']")
+    searchBar.click()
+    searchBar.send_keys(ISBN)
+
+    #Find the search button and click it
+    searchButton = driver.find_element_by_xpath('/html/body/div[1]/div/div[1]/div[2]/div/form/div/div/div[1]/button[2]')
+    searchButton.click()
+
+    #Grabs the price to buy new/used, rent new/used, and return date
+    buyNew = WebDriverWait(driver, 10).until(expected_conditions.visibility_of_element_located((By.XPATH,"/html/body/main/div[3]/div[5]/div/div/div/div[2]/div[2]/div/div[3]/div/div[1]/div[2]/div[1]/div/label/span[1]")))
+    buyUsed = driver.find_element_by_xpath("/html/body/main/div[3]/div[5]/div/div/div/div[2]/div[2]/div/div[3]/div/div[1]/div[2]/div[2]/div/label/span[1]")
+    rentNew = driver.find_element_by_xpath("/html/body/main/div[3]/div[5]/div/div/div/div[2]/div[2]/div/div[3]/div/div[2]/div[2]/div[1]/div/label/span[1]")
+    rentUsed = driver.find_element_by_xpath("/html/body/main/div[3]/div[5]/div/div/div/div[2]/div[2]/div/div[3]/div/div[2]/div[2]/div[2]/div/label/span[1]")
+    rentReturn = driver.find_element_by_xpath("/html/body/main/div[3]/div[5]/div/div/div/div[2]/div[2]/div/div[3]/div/div[2]/div[2]/div[2]/div/span")
+    return [buyNew.get_attribute("innerHTML"),buyUsed.get_attribute("innerHTML"),rentNew.get_attribute("innerHTML"),rentUsed.get_attribute("innerHTML"),rentReturn.get_attribute("innerHTML")]
+    
+    
 main()
