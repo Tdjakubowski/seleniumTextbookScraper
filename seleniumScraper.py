@@ -1,7 +1,8 @@
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.common import exceptions
-from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.firefox.options import Options as ff_options
+from selenium.webdriver.chrome.options import Options as cr_options
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions
@@ -50,24 +51,22 @@ def main():
 
 def seleniumStartup(webBrowserChoice):
     
-    #Ensures the webdriver will load w/o GUI
-    options = Options()
-    
-    
     for i in range(3):
 
         #Actually starting the webdriver. Will do 3 attempts then shut down if it fails. If it works, returns the driver
         try:
             #Start a firefox webdriver
             if int(webBrowserChoice) == 1:
+                options = ff_options()
                 options.headless = True
-                driver= webdriver.Firefox(options=options)
+                driver = webdriver.Firefox(options=options)
                 print("Driver loaded.")
                 return driver
             #Start a chrome webdriver
             else:
-                #some command goes here to make it headless
-                driver = webdriver.Chrome()
+                options = cr_options()
+                options.headless = True
+                driver = webdriver.Chrome(options=options)
                 print("Driver loaded.")
                 return driver
 
@@ -77,6 +76,7 @@ def seleniumStartup(webBrowserChoice):
         print("Error: ",err)
         print("Webdriver Load Failed. Shutting Down.")
         exit()
+        
 #Not perfect yet, google tends to give one of 3 instances when pulling up the shopping page, so need to add more exception catchers to filter through all possible pages.
 def googleScraping(driver,ISBN):
     driver.get('https://www.google.com/')
@@ -124,5 +124,6 @@ def barnesAndNobleScraping(driver,ISBN):
     rentReturn = driver.find_element_by_xpath("/html/body/main/div[3]/div[5]/div/div/div/div[2]/div[2]/div/div[3]/div/div[2]/div[2]/div[2]/div/span")
     return [buyNew.get_attribute("innerHTML"),buyUsed.get_attribute("innerHTML"),rentNew.get_attribute("innerHTML"),rentUsed.get_attribute("innerHTML"),rentReturn.get_attribute("innerHTML")]
     
-    
-main()
+
+if __name__ == '__main__':
+    main()
