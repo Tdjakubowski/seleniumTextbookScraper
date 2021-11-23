@@ -9,7 +9,7 @@ from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.common.by import By
-import time
+import re
 
 
 
@@ -43,8 +43,8 @@ def main():
     #barnesAndNobleResults = [] #[buyNew,buyUsed,rentNew,rentUsed,rentReturn] If one of the items is unavailable, it will return None
     #barnesAndNobleResults= barnesAndNobleScraping(driver,ISBN)
 
-    #googleResults = [[],[]]
-    #googleResults = googleScraping(driver,ISBN)
+    #[Cost of book, Website it came from, If it's used, URL to Website]
+    googleResults = googleScraping(driver,ISBN)
 
     amazonResults = amazonScraping(driver,ISBN)
     driver.quit()
@@ -79,7 +79,7 @@ def seleniumStartup(webBrowserChoice):
         print("Webdriver Load Failed. Shutting Down.")
         exit()
         
-#Not perfect yet, google tends to give one of 3 instances when pulling up the shopping page, so need to add more exception catchers to filter through all possible pages.
+
 def googleScraping(driver,ISBN):
     driver.get('https://www.google.com/')
 
@@ -88,23 +88,58 @@ def googleScraping(driver,ISBN):
     searchBar.send_keys(ISBN)
     searchBar.submit()
     
-
-    shoppingButton = WebDriverWait(driver, 10).until(expected_conditions.visibility_of_element_located((By.XPATH,'/html/body/div[7]/div/div[3]/div/div[1]/div/div[1]/div/div[5]/a')))
-    shoppingButton.click()
+    #Getting to the shopping page
+    try:
+        shoppingButton = WebDriverWait(driver, 2).until(expected_conditions.visibility_of_element_located((By.XPATH,'/html/body/div[7]/div/div[3]/div/div[1]/div/div[1]/div/div[5]/a')))
+        shoppingButton.click()
+    except exceptions.TimeoutException:
+        shoppingButton = driver.find_element_by_xpath('/html/body/div[7]/div/div[4]/div/div[1]/div/div[1]/div/div[5]/a')
+        shoppingButton.click()
     results = []
-    for i in range(3):
+    
+    #Trying to find a button that'll take us to the page with all of the prices. This isn't comprehensive, but it usually works
+    try:
+        comparePricesButton = WebDriverWait(driver, 5).until(expected_conditions.visibility_of_element_located((By.XPATH,'/html/body/div[6]/div/div[3]/div[4]/div/div[3]/div[2]/div[2]/div/div[1]/div[1]/div[2]/div[3]/div/a')))
+    except exceptions.TimeoutException:
         try:
-            cost = WebDriverWait(driver, 5).until(expected_conditions.visibility_of_element_located((By.XPATH,'/html/body/div[7]/div/div[9]/div[4]/div/div[2]/div[2]/div/div/div[1]/g-scrolling-carousel/div[1]/div/div/div['+str(i+1)+']/a/div[3]/div/div[2]/span/b')))
-            website = WebDriverWait(driver, 5).until(expected_conditions.visibility_of_element_located((By.XPATH,'/html/body/div[7]/div/div[9]/div[4]/div/div[2]/div[2]/div/div/div[1]/g-scrolling-carousel/div[1]/div/div/div['+str(i+1)+']/a/div[3]/div/div[3]/span')))
-        except exceptions.TimeoutException:
-            cost = WebDriverWait(driver, 5).until(expected_conditions.visibility_of_element_located((By.XPATH,'/html/body/div[7]/div/div[9]/div[4]/div/div[2]/div[2]/div/div/div[1]/g-scrolling-carousel/div[1]/div/div/div['+str(i+1)+']/a/div[2]/div/div[2]/span/b')))
-            website = WebDriverWait(driver, 5).until(expected_conditions.visibility_of_element_located((By.XPATH,'/html/body/div[7]/div/div[9]/div[4]/div/div[2]/div[2]/div/div/div[1]/g-scrolling-carousel/div[1]/div/div/div['+str(i+1)+']/a/div[3]/div/div[3]/span')))
+            comparePricesButton=driver.find_element_by_xpath('/html/body/div[7]/div/div[9]/div[4]/div/div[2]/div[2]/div/div/div[2]/div[2]/div/div[1]/div[1]/div[2]/div[3]/div/a')
+        except exceptions.NoSuchElementException:
+            try:
+                comparePricesButton = driver.find_element_by_xpath('/html/body/div[7]/div/div[9]/div[4]/div/div[2]/div[2]/div/div/div[1]/div[2]/div/div[1]/div[1]/div[2]/div[3]/div/a')
+            except exceptions.NoSuchElementException:               
+                try:
+                    comparePricesButton = driver.find_element_by_xpath('/html/body/div[6]/div/div[3]/div[4]/div/div[3]/div[1]/div[2]/div/div[1]/div[1]/div[2]/div[3]/div/a')
+                except exceptions.NoSuchElementException:
+                    try:
+                        comparePricesButton = driver.find_element_by_xpath('/html/body/c-wiz[2]/div/div/div[1]/div/div/div/div[2]/div/div[2]/div/div[3]/div/div/div/div/div[1]/div/div/div/div/article/div/div[2]/div[2]/a')                  
+                    except exceptions.NoSuchElementException:
+                        try:
+                            comparePricesButton = driver.find_element_by_xpath('/html/body/div[7]/div/div[10]/div[4]/div/div[2]/div[2]/div/div/div[2]/div[2]/div/div[1]/div[1]/div[2]/div[3]/div/a')
+                        except exceptions.NoSuchElementException:
+                            comparePricesButton = driver.find_element_by_xpath('/html/body/div[7]/div/div[10]/div[4]/div/div[2]/div[2]/div/div/div[1]/div[2]/div/div[1]/div[1]/div[2]/div[3]/div/a')
+                            
+    comparePricesButton.click()    
+    #Scraping the cost, where to buy it, if the book is used or not, and the URL for a specific seller. If an error is thrown, it skips the line and moves to the next one. Also, regex is used to search through scraped data to grab specifics                
+    for i in range(len(WebDriverWait(driver,5).until(expected_conditions.presence_of_all_elements_located((By.XPATH,'/html/body/div[4]/div[2]/div/div[3]/div/table/tbody/tr'))))):
+        try:
+            cost = driver.find_element_by_xpath('/html/body/div[4]/div[2]/div/div[3]/div/table/tbody/tr['+str(i+1)+']/td[3]').get_attribute('innerHTML')
+            #Regex searches for the word 'Used', and sets a boolean to true if its found
+            if re.search('Used',cost) != None:
+                used = True
+            else:
+                used = False
+            cost = re.search('\W\d\d\.\d\d',cost).group(0)#Pulls the price w/ the dollar sign
+            
+            website = driver.find_element_by_xpath('/html/body/div[4]/div[2]/div/div[3]/div/table/tbody/tr['+str(i+1)+']/td[1]/div[1]/a').get_attribute("innerHTML")
+            website = re.search('.+?(?=<)',website).group(0)#Pulls everything before the first '<'
+            
+            URL = (driver.find_element_by_xpath('/html/body/div[4]/div[2]/div/div[3]/div/table/tbody/tr['+str(i+1)+']/td[5]/div/a').get_attribute('href'))
+            results.append([cost,website,used,URL])
+        except exceptions.NoSuchElementException:
+            i+=1
 
-        URL = 'https://www.google.com/' + (WebDriverWait(driver, 5).until(expected_conditions.visibility_of_element_located((By.XPATH,'/html/body/div[7]/div/div[9]/div[4]/div/div[2]/div[2]/div/div/div[1]/g-scrolling-carousel/div[1]/div/div/div['+str(i+1)+']/a'))).get_attribute('href'))
-        print(URL)
-        results.append([cost,website,URL])
+    return results
 
-    print(results)
 def barnesAndNobleScraping(driver,ISBN):
     
     driver.get('https://ilstu.bncollege.com/')
