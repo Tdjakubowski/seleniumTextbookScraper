@@ -1,9 +1,11 @@
 from selenium import webdriver
+from selenium.webdriver.common import keys
 from selenium.webdriver.common.keys import Keys
 from selenium.common import exceptions
 from selenium.webdriver.firefox.options import Options as ff_options
 from selenium.webdriver.chrome.options import Options as cr_options
 from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.common.by import By
@@ -38,13 +40,13 @@ def main():
     driver = seleniumStartup(webBrowserChoice)
     ISBN = '9781442222502'
     
-    barnesAndNobleResults = [] #[buyNew,buyUsed,rentNew,rentUsed,rentReturn] If one of the items is unavailable, it will return None
-    barnesAndNobleResults= barnesAndNobleScraping(driver,ISBN)
+    #barnesAndNobleResults = [] #[buyNew,buyUsed,rentNew,rentUsed,rentReturn] If one of the items is unavailable, it will return None
+    #barnesAndNobleResults= barnesAndNobleScraping(driver,ISBN)
 
-    googleResults = [[],[]]
-    googleResults = googleScraping(driver,ISBN)
+    #googleResults = [[],[]]
+    #googleResults = googleScraping(driver,ISBN)
 
-    
+    amazonResults = amazonScraping(driver,ISBN)
     driver.quit()
 
 #Attempts to start a Firefox webdriver using Selenium, I did firefox because I don't want to redownload chrome, even though chrome is probably better for this process
@@ -65,7 +67,7 @@ def seleniumStartup(webBrowserChoice):
             #Start a chrome webdriver
             else:
                 options = cr_options()
-                options.headless = True
+                options.headless = False
                 driver = webdriver.Chrome(options=options)
                 print("Driver loaded.")
                 return driver
@@ -123,7 +125,18 @@ def barnesAndNobleScraping(driver,ISBN):
     rentUsed = driver.find_element_by_xpath("/html/body/main/div[3]/div[5]/div/div/div/div[2]/div[2]/div/div[3]/div/div[2]/div[2]/div[2]/div/label/span[1]")
     rentReturn = driver.find_element_by_xpath("/html/body/main/div[3]/div[5]/div/div/div/div[2]/div[2]/div/div[3]/div/div[2]/div[2]/div[2]/div/span")
     return [buyNew.get_attribute("innerHTML"),buyUsed.get_attribute("innerHTML"),rentNew.get_attribute("innerHTML"),rentUsed.get_attribute("innerHTML"),rentReturn.get_attribute("innerHTML")]
+def amazonScraping(driver,ISBN):
     
+    #Pull up search page
+    driver.get('https://www.amazon.com/advanced-search/books')
+
+    #Input ISBN
+    searchBar = driver.find_element_by_id("field-isbn")
+    searchBar.send_keys(ISBN)
+    searchBar.send_keys(Keys.ENTER)
+
+    #Wait for listing to load
+    resultsPage = WebDriverWait(driver, 5).until(expected_conditions.visibility_of_element_located((By.TAG_NAME, "body")))
 
 if __name__ == '__main__':
     main()
