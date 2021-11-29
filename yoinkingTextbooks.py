@@ -1,13 +1,9 @@
 import re, os, PyPDF2
 #Download this file: https://psout.illinoisstate.edu/textbook/isu_textbook_assignments_CURRENT_SP2022.pdf
 def main():
-    
-    if input("If PDF: Input 0, for text file input 1") !=0:
-        path = input("Input path to TextbookList.txt:")+r'\textbookList.txt'
-        text = openText(path)
-    else:
-        path = input("Input path to TextbookList.PDF:")+r'\textbookList.txt'
-        text = openAndConvertPDF(path)
+ 
+    path = input("Input path to TextbookList.txt:")+r'\textbookList.txt'
+    text = openText(path)
 
     results = getTextbooks(text)
     print(results)
@@ -16,17 +12,6 @@ def openText(path):
     openFile = open(path,'r')
     text = openFile.read()
     openFile.close()
-    return text
-#Opens The PDF and converts it to a text file-Copy the text and paste it into a txt file for next use
-def openAndConvertPDF(path):
-
-    text = ''
-    pdfFile = open(path,'rb')
-    pdfReader = PyPDF2.PdfFileReader(pdfFile)
-    for i in range(pdfReader.numPages):
-        page = pdfReader.getPage(i)
-        text += page.extractText()
-    pdfFile.close()
     return text
 
 #Grabs all Class Names, Section Numbers, and ISBN's for textbooks and returns an embedded list    
@@ -42,7 +27,7 @@ def getTextbooks(textbookFile):
     for i in everythingAllOfTheTime:
         if re.search('\w\w\w\s\s\d\d\d|\w\w\s\s\d\d\d|\w\w\s\s\d\d|\w\w\w\s\s\d\d|\w\w\w\s\s\s\d\d', i) != None:
             if not firstTime:
-                print(temp)
+                #print(temp) good for debug
                 results.append(temp)
                 temp = []
             else:
@@ -52,4 +37,4 @@ def getTextbooks(textbookFile):
     temp.append(i)        
     return results
 
-main()
+#main()
