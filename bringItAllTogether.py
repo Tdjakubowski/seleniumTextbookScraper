@@ -1,6 +1,5 @@
 import searchList as sL
 import seleniumScraper as scraper
-from selenium.webdriver.support.expected_conditions import NoSuchElementException
 
 
 def main():
