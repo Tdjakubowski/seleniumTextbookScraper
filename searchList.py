@@ -1,7 +1,6 @@
 import yoinkingTextbooks as yoink
 
-def searchTextbookList(className,section):
-    path = input(r"Input path to TextbookList.txt:")+r'\textbookList.txt'
+def searchTextbookList(className,section,path):
     text = yoink.openText(path)
     beegList = yoink.getTextbooks(text)
 
@@ -16,5 +15,5 @@ def searchTextbookList(className,section):
 
 #Debug lines
 #className = input('Input Class (With 2 spaces inbetween):')
-#section = 'Section:'+str(input('Input Section Number:'))  
+#section = 'Section:'+str(input('Input Section Number:'))
 #searchTextbookList(className,section)
