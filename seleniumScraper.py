@@ -147,8 +147,13 @@ def isuBookstoreScraping(driver,ISBN):
     driver.get('https://ilstu.bncollege.com/')
 
     #Input the ISBN into the search
+    searchbutton = driver.find_element_by_xpath("/html/body/main/header/div[7]/div/div/section[1]/div/div[2]/button[1]")
     searchBar = driver.find_element_by_xpath("//*[@id='bned_site_search']")
-    searchBar.click()
+    try:
+        searchBar.click()
+    except exceptions.ElementNotInteractableException:
+        searchbutton.click()
+        searchBar.click()
     searchBar.send_keys(ISBN)
     searchBar.submit()
     
