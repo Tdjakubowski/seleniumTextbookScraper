@@ -8,7 +8,7 @@ def main():
     individualResults = []
     className = input('Input Class Name:').upper()
     section = 'Section:'+input('Input 3 Digit Section Number(ex: 001):')
-    browser = input('Input 1 for Firefox(GeckoDriver), or 2 for Chrome(ChromeDriver):')
+    browser = input('Input 1 for Chrome(ChromeDriver), or 2 for Firefox(GeckoDriver):')
     textbook = sL.searchTextbookList(className,section,'textbookList.txt')
 
     #If it doesn't return a textbook, adds a space inbetween className
