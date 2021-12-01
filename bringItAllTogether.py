@@ -8,6 +8,7 @@ def main():
     individualResults = []
     className = input('Input Class Name:')
     section = 'Section:'+input('Input 3 Digit Section Number(ex: 001):')
+    browser = input('Input 1 for Firefox, or 2 for Chrome:')
     path = input(r"Input path to TextbookList.txt:")+r'\textbookList.txt'
     textbook = sL.searchTextbookList(className,section,path)
 
@@ -20,7 +21,7 @@ def main():
         print('No Textbook Assigned')
         return 'No Textbook Assigned'
     else:
-        driver = scraper.seleniumStartup(1)    
+        driver = scraper.seleniumStartup(browser)    
     for x in range(2,len(textbook)): #Will run several times if multiple ISBN's
         resultsRetrieved = False
         while not resultsRetrieved and i<5:
