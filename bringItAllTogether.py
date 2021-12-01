@@ -8,7 +8,7 @@ def main():
     individualResults = []
     className = input('Input Class Name:')
     section = 'Section:'+input('Input 3 Digit Section Number(ex: 001):')
-    path = input(r"Input path to TextbookList.txt:")+r'\textbookList.txt'
+    path = 'textbookList.txt'
     textbook = sL.searchTextbookList(className,section,path)
 
     #If it doesn't return a textbook, adds a space inbetween className
