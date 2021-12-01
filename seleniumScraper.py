@@ -136,7 +136,7 @@ def googleScraping(driver,ISBN):
             website = re.search('.+?(?=<)',website).group(0)#Pulls everything before the first '<'
             
             URL = (driver.find_element_by_xpath('/html/body/div[4]/div[2]/div/div[3]/div/table/tbody/tr['+str(i+1)+']/td[5]/div/a').get_attribute('href'))
-            results.append([cost,website,used,URL])
+            results.append([cost,website,URL])
         except exceptions.NoSuchElementException:
             i+=1
 
