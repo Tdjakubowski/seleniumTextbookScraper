@@ -51,7 +51,7 @@ def seleniumStartup(webBrowserChoice):
         #Actually starting the webdriver. Will do 3 attempts then shut down if it fails. If it works, returns the driver
         try:
             #Start a firefox webdriver
-            if int(webBrowserChoice) == 1:
+            if int(webBrowserChoice) == 2:
                 options = ff_options()
                 options.headless = True
                 driver = webdriver.Firefox(options=options)
@@ -68,7 +68,6 @@ def seleniumStartup(webBrowserChoice):
         except exceptions.WebDriverException as err:
             print("Driver Failed. Attempt #"+str(i+1)+"/3")
     if i == 2:
-        print("Error: ",err)
         print("Webdriver Load Failed. Shutting Down.")
         exit()
         
