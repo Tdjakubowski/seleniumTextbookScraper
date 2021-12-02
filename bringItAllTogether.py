@@ -59,9 +59,11 @@ def main():
             try:
                 if cheapest > float(results[i][x][0][1:]):
                     cheapestIndex = x
+                    cheapest = float(results[i][x][0][1:])
             except ValueError:
                 if cheapest > float(results[i][x][0][2:]):
                     cheapestIndex = x
+                    cheapest = float(results[i][x][0][2:])
         print('\n Cheapest Book:\nPrice: '+str(results[i][cheapestIndex][0])+' Seller: '+str(results[i][cheapestIndex][1])+' URL: '+str(results[i][cheapestIndex][2])+'\n')
     
 
