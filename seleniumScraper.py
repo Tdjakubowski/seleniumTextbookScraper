@@ -186,8 +186,9 @@ def amazonScraping(driver,ISBN):
 
     #Waits for first item, then pulls. If fails, tries to press a paperback button to get a different price. If that fails, returns None
     try:
-        price = WebDriverWait(driver, 2).until(expected_conditions.visibility_of_element_located((By.XPATH, "/html/body/div[1]/div[2]/div[1]/div[1]/div/span[3]/div[2]/div[1]/div/span/div/div/div[2]/div[2]/div/div/div[3]/div[1]/div/div[1]/div[2]/a[1]/span[1]/span[2]/span[2]"))).get_attribute('innerHTML')
-        price = '$'+price[:2]+'.'+driver.find_element_by_xpath('/html/body/div[1]/div[2]/div[1]/div[1]/div/span[3]/div[2]/div[1]/div/span/div/div/div[2]/div[2]/div/div/div[3]/div[1]/div/div[1]/div[2]/a[1]/span[1]/span[2]/span[3]').get_attribute('innerHTML')
+        #price = WebDriverWait(driver, 2).until(expected_conditions.visibility_of_element_located((By.XPATH, "/html/body/div[1]/div[2]/div[1]/div[1]/div/span[3]/div[2]/div[1]/div/span/div/div/div[2]/div[2]/div/div/div[3]/div[1]/div/div[1]/div[2]/a[1]/span[1]/span[2]/span[2]"))).get_attribute('innerHTML')
+        #price = '$'+price[:2]+'.'+driver.find_element_by_xpath('/html/body/div[1]/div[2]/div[1]/div[1]/div/span[3]/div[2]/div[1]/div/span/div/div/div[2]/div[2]/div/div/div[3]/div[1]/div/div[1]/div[2]/a[1]/span[1]/span[2]/span[3]').get_attribute('innerHTML')
+        price = WebDriverWait(driver, 2).until(expected_conditions.visibility_of_element_located((By.XPATH, "/html/body/div[1]/div[2]/div[1]/div[1]/div/span[3]/div[2]/div[1]/div/span/div/div/div[2]/div[2]/div/div/div[3]/div[1]/div/div[1]/div[2]/a[2]/span[1]"))).get_attribute('innerHTML')
         return [price,'Amazon',driver.current_url]
     
     except exceptions.TimeoutException:
